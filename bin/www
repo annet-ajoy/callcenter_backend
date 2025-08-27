@@ -1,0 +1,158 @@
+#!/usr/bin/env node
+
+/**
+ * Module dependencies.
+ */
+
+var app = require('../app');
+var debug = require('debug')('socket_pbx:server');
+var http = require('http');
+var cors = require('cors');
+
+/**
+ * Get port from environment and store in Express.
+ */
+
+var port = normalizePort(process.env.PORT || '7000');
+app.set('port', port);
+
+/**
+ * Create HTTP server.
+ */
+
+var server = http.createServer(app);
+/**
+ * Listen on provided port, on all network interfaces.
+ */
+
+server.listen(port);
+server.on('error', onError);
+server.on('listening', onListening);
+
+
+var io = require("socket.io")(server, {
+  cors: {
+    origin: '*', // or your React app's origin
+    methods: ['GET', 'POST'],
+    credentials: true,
+  },
+  
+});
+global.io = io;
+app.set('roomConnection', io);
+console.log('evn prodution :',process.env.PRODUCTION)
+const config = require('../config/config');
+const redis = config.redis
+io.on('connection', (socket) => {
+  console.log('a user connected');
+  // Handle join room event
+  socket.on('join_room',async (room) => {
+    console.log(`User joined room: ${room}`);
+    if (process.env.PRODUCTION == 'developmentLive' || process.env.PRODUCTION == 'live') {
+      var userRooms = await redis.get("socketUsers");
+      console.log(`User joined room: ${room}`);
+        socket.join(room);
+      if(userRooms){
+        if(userRooms){
+          userRooms = JSON.parse(userRooms)
+        }else{
+          userRooms = [];
+        }
+      }else{
+        userRooms = [];
+      }
+      if (!userRooms.includes(room)) {
+        userRooms.push(room);
+        redis.set("socketUsers", JSON.stringify(userRooms));
+        // console.log('joined sockets :', userRooms)
+      }
+      
+    }
+    if(process.env.PRODUCTION == 'development'){
+      socket.join(room);
+    }
+  });
+
+  // Handle disconnect event
+  // socket.on('disconnect', (reason) => {
+  //   console.log('user disconnected',reason);
+  // });
+
+  socket.on('disconnecting',async (reason) => {
+    if (process.env.PRODUCTION == 'developmentLive' || process.env.PRODUCTION == 'live') {
+      var userRooms = await redis.get("socketUsers");
+      if(userRooms){
+        userRooms = JSON.parse(userRooms)
+      }
+        // console.log(`userRooms --->: ${userRooms}`);
+      const rooms = Array.from(socket.rooms).filter((room) => room !== socket.id);
+      // console.log(`User was in rooms: ${rooms}`);
+      const indexToRemove = userRooms.indexOf(rooms[0]);
+      if (indexToRemove !== -1) {
+        userRooms.splice(indexToRemove, 1);
+      }
+      redis.set("socketUsers", JSON.stringify(userRooms));
+      console.log('joined sockets after delete :', userRooms)
+    }
+    console.log('user disconnecting reason:', reason);
+  });
+});
+/**
+ * Normalize a port into a number, string, or false.
+ */
+
+function normalizePort(val) {
+  var port = parseInt(val, 10);
+
+  if (isNaN(port)) {
+    // named pipe
+    return val;
+  }
+
+  if (port >= 0) {
+    // port number
+    return port;
+  }
+
+  return false;
+}
+
+/**
+ * Event listener for HTTP server "error" event.
+ */
+
+function onError(error) {
+  if (error.syscall !== 'listen') {
+    throw error;
+  }
+
+  var bind = typeof port === 'string'
+    ? 'Pipe ' + port
+    : 'Port ' + port;
+
+  // handle specific listen errors with friendly messages
+  switch (error.code) {
+    case 'EACCES':
+      console.error(bind + ' requires elevated privileges');
+      process.exit(1);
+      break;
+    case 'EADDRINUSE':
+      console.error(bind + ' is already in use');
+      process.exit(1);
+      break;
+    default:
+      throw error;
+  }
+}
+
+/**
+ * Event listener for HTTP server "listening" event.
+ */
+
+function onListening() {
+  var addr = server.address();
+  var bind = typeof addr === 'string'
+    ? 'pipe ' + addr
+    : 'port ' + addr.port;
+  debug('Listening on ' + bind);
+}

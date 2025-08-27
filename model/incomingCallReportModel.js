@@ -1,0 +1,41 @@
+const Sequelize = require( "sequelize" );
+const db = require( "../database" ).db;
+const incoming_reports = db.define( "incoming_reports", {
+	id: { type: Sequelize.INTEGER, primaryKey: true, autoIncrement: true },
+    id_user: { type: Sequelize.INTEGER},
+    id_department: { type: Sequelize.INTEGER},
+    user_id: { type: Sequelize.INTEGER},
+    call_start_time: { type: Sequelize.DATE},
+    call_end_time: { type: Sequelize.DATE},
+    call_connected_time: { type: Sequelize.DATE},
+    uniqueid: { type: Sequelize.STRING},
+    source: { type: Sequelize.STRING},
+    destination: { type: Sequelize.STRING},
+    connected_user_id: { type: Sequelize.INTEGER},
+    connected_duration: { type: Sequelize.INTEGER},
+    total_duration: { type: Sequelize.INTEGER},
+    call_status: { type: Sequelize.STRING},
+    user_status: { type: Sequelize.STRING},
+    cr_file: { type: Sequelize.STRING},
+    cr_status: { type: Sequelize.INTEGER},
+    cost: { type: Sequelize.FLOAT},
+    user_status: { type: Sequelize.STRING},
+    cr_file: { type: Sequelize.STRING},
+    app: { type: Sequelize.INTEGER},
+    dtmf_sequence: { type: Sequelize.INTEGER},
+    first_tried_user_id: { type: Sequelize.INTEGER},
+    voicemail: { type: Sequelize.INTEGER},
+    voicemail_file: { type: Sequelize.STRING},
+    appId : { type: Sequelize.INTEGER},
+    first_tried_user : { type: Sequelize.INTEGER},
+    last_tried_user : { type: Sequelize.INTEGER},
+    calltask_contact_id: { type: Sequelize.STRING},
+    sticky_status:{ type: Sequelize.INTEGER},
+    total_hold_time:{ type: Sequelize.INTEGER},
+    app_target_id: { type: Sequelize.STRING},
+},{
+	tableName:"incoming_reports",
+    timestamps: false,
+} );
+
+module.exports = incoming_reports;
